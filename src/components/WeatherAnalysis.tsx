@@ -18,6 +18,7 @@ import type { Location } from '@/app/page'
 import type { WeatherAnalysisResponse } from '@/types/weather'
 import { WEATHER_THRESHOLDS } from '@/config/weatherThresholds'
 import DefinitionsModal from './DefinitionsModal'
+import InsightAI from './InsightAI'
 
 interface WeatherAnalysisProps {
   weatherData: WeatherAnalysisResponse
@@ -123,6 +124,14 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
     return null
   }
 
+  // Prepare trend data for AI
+  const trendData = {
+    veryHot: weatherData.trendAnalysis.find(t => t.category === 'Very Hot')?.changePercent || 0,
+    veryWet: weatherData.trendAnalysis.find(t => t.category === 'Very Wet')?.changePercent || 0,
+    veryWindy: weatherData.trendAnalysis.find(t => t.category === 'Very Windy')?.changePercent || 0,
+    veryUncomfortable: weatherData.trendAnalysis.find(t => t.category === 'Very Uncomfortable')?.changePercent || 0,
+  }
+
   return (
     <div className="space-y-6">
       {/* Definitions Modal */}
@@ -160,6 +169,22 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
           </div>
         )}
       </div>
+
+      {/* AI Insights Card */}
+      <InsightAI
+        odds={{
+          veryHot: weatherData.probability.veryHot,
+          veryWet: weatherData.probability.veryWet,
+          veryWindy: weatherData.probability.veryWindy,
+          veryUncomfortable: weatherData.probability.veryUncomfortable,
+        }}
+        trend={trendData}
+        lat={location.lat}
+        lon={location.lng}
+        locationName={location.name}
+        date={date.toISOString()}
+        sampleYears={weatherData.dataPoints}
+      />
 
       {/* Probability Bars */}
       <div className="bg-white rounded-xl shadow-lg p-6">

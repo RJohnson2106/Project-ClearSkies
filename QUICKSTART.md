@@ -41,6 +41,16 @@ Open your browser and go to: **http://localhost:3000**
 3. Click "Analyze Weather"
 4. View the cold weather chances! ❄️
 
+### Example 4: Try AI Insights! 🤖
+1. After analyzing any location
+2. Scroll to "AI Weather Insights" card
+3. Click "Enable AI" button
+4. Wait for model to load (~30-60 seconds first time)
+5. Get intelligent summary with actionable tips!
+6. 100% private - runs in your browser!
+
+**Note**: Requires Chrome/Edge 113+ with WebGPU. Falls back to template mode on other browsers.
+
 ## Common Commands
 
 ```bash

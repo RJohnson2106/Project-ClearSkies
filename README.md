@@ -10,19 +10,23 @@ A full-stack web application that helps users assess the likelihood of adverse w
 - **Interactive MapLibre Map Interface**: Click anywhere on the map or search for a location
 - **Location Search**: Powered by OpenStreetMap Nominatim geocoding
 - **Date Selection**: Pick any day of the year to analyze
+- **🧠 AI Weather Insights**: Client-side AI-powered summaries using WebLLM (runs in your browser!)
 - **Weather Categories**:
-  - 🔥 Very Hot (≥95°F)
-  - ❄️ Very Cold (≤32°F)
-  - 💨 Very Windy (≥25 mph)
-  - 🌧️ Very Wet (≥0.5 inches precipitation)
-  - 😰 Very Uncomfortable (high heat + humidity or windy + wet)
+  - 🔥 Very Hot (>90°F) - NOAA Heat Index Guidelines
+  - ❄️ Very Cold (<32°F) - NOAA Freeze Warning
+  - 💨 Very Windy (>25 mph) - NWS Wind Advisory
+  - 🌧️ Very Wet (>0.5 inches) - NOAA Heavy Rain
+  - 😰 Very Uncomfortable (heat+humidity OR wind+rain)
 
 ### Analysis Features
 - **Historical Data Analysis**: 20 years of weather data (2004-2024)
-- **Probability Calculations**: Statistical analysis of extreme weather events
-- **Visual Charts**: Interactive bar charts using Recharts
+- **Probability Calculations**: Statistical analysis with detailed counts ("9 of 20 years")
+- **Visual Charts**: Interactive bar and line charts using Recharts
 - **Data Export**: Download results as CSV or JSON
 - **Climate Trend Analysis**: Track how weather patterns have changed over time
+- **🤖 AI-Powered Insights**: Get intelligent summaries with actionable tips (WebGPU-powered)
+- **Scientific Definitions**: NOAA/NASA-based thresholds with citations
+- **Detailed Tooltips**: Raw counts and exact thresholds in hover tooltips
 
 ### User Experience
 - **Mobile-Friendly**: Responsive design for all devices
@@ -41,6 +45,7 @@ A full-stack web application that helps users assess the likelihood of adverse w
 - **Charts**: Recharts
 - **Icons**: Lucide React
 - **Date Handling**: date-fns
+- **🧠 AI**: WebLLM (client-side LLM via WebGPU)
 
 ### Backend
 - **API Routes**: Next.js API Routes
@@ -98,9 +103,36 @@ Navigate to [http://localhost:3000](http://localhost:3000)
    - Check climate trends over the past 20 years
    - Read the summary statement
 
-5. **Export Data**:
+5. **Enable AI Insights** (Optional):
+   - Click "Enable AI" in the AI Weather Insights card
+   - Wait for model to load (30-60 seconds first time)
+   - Get personalized, intelligent summaries with actionable tips
+   - Works entirely in your browser (privacy-first!)
+
+6. **Export Data**:
    - Click "CSV" to download as spreadsheet
    - Click "JSON" to download raw data
+
+## 🧠 AI Weather Insights
+
+### Client-Side AI Analysis
+- Runs **100% locally** in your browser using WebLLM
+- **No data sent to servers** - completely private
+- Generates intelligent summaries based on probabilities and trends
+- Provides actionable recommendations
+- Falls back to template mode on unsupported browsers
+
+### Requirements for AI Mode
+- Chrome 113+ or Edge 113+ (WebGPU support)
+- Modern GPU (NVIDIA GTX 900+, AMD RX 400+, Intel Iris+)
+- ~500MB storage for model cache (one-time download)
+
+### Fallback Mode
+- Works on **all devices and browsers**
+- Rule-based summaries when WebGPU unavailable
+- Fast and reliable alternative
+
+**See [AI_INSIGHTS_GUIDE.md](AI_INSIGHTS_GUIDE.md) for detailed documentation**
 
 ## 📊 How It Works
 
