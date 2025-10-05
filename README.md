@@ -103,23 +103,29 @@ Navigate to [http://localhost:3000](http://localhost:3000)
    - Check climate trends over the past 20 years
    - Read the summary statement
 
-5. **Enable AI Insights** (Optional):
-   - Click "Enable AI" in the AI Weather Insights card
+5. **Enable AI Assistant** (Optional):
+   - Click "Enable AI" in the AI Weather Assistant card
    - Wait for model to load (30-60 seconds first time)
    - Get personalized, intelligent summaries with actionable tips
+   - **Ask follow-up questions** in chat mode!
+   - Example: "What's the best time for outdoor activities?"
    - Works entirely in your browser (privacy-first!)
 
 6. **Export Data**:
    - Click "CSV" to download as spreadsheet
    - Click "JSON" to download raw data
 
-## 🧠 AI Weather Insights
+## 🧠 AI Weather Assistant (Chat Mode!)
 
-### Client-Side AI Analysis
+### Client-Side AI Analysis with Interactive Chat 💬
 - Runs **100% locally** in your browser using WebLLM
+- **Multi-turn conversations** - Ask follow-up questions!
+- **Context-aware** - AI remembers your conversation
 - **No data sent to servers** - completely private
 - Generates intelligent summaries based on probabilities and trends
 - Provides actionable recommendations
+- **Advanced controls**: Adjust temperature and response length
+- **Export chat transcripts** as text files
 - Falls back to template mode on unsupported browsers
 
 ### Requirements for AI Mode

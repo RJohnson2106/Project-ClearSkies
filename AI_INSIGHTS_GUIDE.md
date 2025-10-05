@@ -13,18 +13,30 @@ The AI Weather Insights feature provides intelligent, personalized summaries of 
 - 🚀 **No API costs**: Uses WebGPU on your device
 - 🌐 **Works offline**: Once model is loaded, no internet required for insights
 
-### 2. **Intelligent Summaries**
+### 2. **Interactive Chat Mode** 🆕
+- 💬 **Multi-turn conversations**: Ask follow-up questions about the weather
+- 🤔 **Context-aware**: AI remembers previous questions in the session
+- 📝 **Chat history**: View all your questions and answers
+- 💾 **Auto-save**: Conversations saved locally (1 hour cache)
+- 📤 **Export**: Download chat transcripts as text files
+
+### 3. **Intelligent Summaries**
 - 📊 Analyzes probabilities and trends
 - 🎯 Identifies most significant risks
 - 💡 Provides actionable recommendations
 - 📝 Concise, jargon-free language
 
-### 3. **Location Context**
+### 4. **Location Context**
 - 🗺️ Enriches analysis with location information
 - 🌍 Uses OpenStreetMap for reverse geocoding
 - 📍 Provides relevant local context
 
-### 4. **Smart Fallback**
+### 5. **Advanced Controls** 🆕
+- 🎛️ **Temperature slider**: Adjust creativity (0.0-1.0)
+- 📏 **Token length**: Control response length (50-500 tokens)
+- ⚙️ **Power user settings**: Fine-tune AI behavior
+
+### 6. **Smart Fallback**
 - 🔄 Template-based summaries for unsupported devices
 - ✅ Works on all devices (AI or template mode)
 - 📱 Mobile-friendly interface
@@ -56,11 +68,31 @@ The AI provides:
 - Practical preparation steps
 - No vague suggestions
 
-### Step 3: Manage Insights
+### Step 3: Ask Questions (Chat Mode) 🆕
 
-- **Regenerate**: Click "Regenerate" for a fresh perspective
-- **Collapse**: Click arrow icon to minimize card
-- **Disable**: Click "Disable AI Insights" to turn off
+After the initial insight is generated:
+
+1. Click **"Ask a Question"** to expand the chat interface
+2. Type your question in the text area
+3. Press **Enter** or click **"Send"**
+4. Wait for AI response (2-5 seconds)
+5. Continue the conversation with follow-up questions!
+
+**Example Questions:**
+- "What's the best time for outdoor activities?"
+- "How does this compare to other months?"
+- "Should I be worried about the heat?"
+- "What should I pack for this weather?"
+- "Is it safe for a long hike?"
+
+### Step 4: Advanced Features
+
+- **Settings**: Click gear icon to adjust temperature and token length
+- **Clear chat**: Remove conversation history
+- **Export**: Download chat transcript
+- **Regenerate**: Get a fresh initial insight
+- **Collapse**: Minimize the card
+- **Disable**: Turn off AI assistant
 
 ---
 
