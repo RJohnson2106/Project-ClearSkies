@@ -1,4 +1,4 @@
-# Weather Probability Assessment App 🌦️
+# Project ClearSkies
 
 A full-stack web application that helps users assess the likelihood of adverse weather conditions for any location and day of the year, using 20 years of historical weather data.
 
