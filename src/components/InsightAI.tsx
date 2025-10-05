@@ -636,7 +636,7 @@ Guidelines:
                       onKeyPress={handleKeyPress}
                       placeholder="Ask about the weather (e.g., 'What's the best time for outdoor activities?')"
                       disabled={isGenerating}
-                      className="w-full resize-none outline-none text-sm h-20 disabled:opacity-50"
+                      className="w-full resize-none outline-none text-sm h-20 disabled:opacity-50 text-gray-900"
                     />
                     <div className="flex items-center justify-between mt-3 pt-3 border-t">
                       <div className="flex items-center space-x-2">

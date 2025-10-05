@@ -106,7 +106,7 @@ export default function MapComponent({ onLocationSelect, selectedLocation }: Map
                   setSearchResults([])
                 }
               }}
-              className="flex-1 outline-none text-sm"
+              className="flex-1 outline-none text-sm text-gray-900 placeholder-gray-400 dark:text-gray-900"
             />
           </div>
           
