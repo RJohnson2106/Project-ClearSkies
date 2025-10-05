@@ -73,7 +73,7 @@ export default function Home() {
               <Cloud className="w-8 h-8 text-primary-600" />
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Weather Probability Assessment
+                  Project ClearSkies
                 </h1>
                 <p className="text-sm text-gray-600">
                   Analyze historical weather patterns for any location
