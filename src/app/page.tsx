@@ -5,33 +5,14 @@ import MapComponent from '@/components/MapComponent'
 import DateSelector from '@/components/DateSelector'
 import WeatherAnalysis from '@/components/WeatherAnalysis'
 import { Cloud, MapPin, Calendar, Info } from 'lucide-react'
+import type { Location, WeatherAnalysisResponse } from '@/types/weather'
 
-export interface Location {
-  lat: number
-  lng: number
-  name?: string
-}
-
-export interface WeatherData {
-  probability: {
-    veryHot: number
-    veryCold: number
-    veryWindy: number
-    veryWet: number
-    veryUncomfortable: number
-  }
-  trendAnalysis?: {
-    category: string
-    trend: 'increasing' | 'decreasing' | 'stable'
-    changePercent: number
-  }[]
-  historicalData: any[]
-}
+export type { Location }
 
 export default function Home() {
   const [selectedLocation, setSelectedLocation] = useState<Location | null>(null)
   const [selectedDate, setSelectedDate] = useState<Date>(new Date())
-  const [weatherData, setWeatherData] = useState<WeatherData | null>(null)
+  const [weatherData, setWeatherData] = useState<WeatherAnalysisResponse | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 

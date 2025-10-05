@@ -1,18 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { THRESHOLDS } from '@/config/weatherThresholds'
+import type { HistoricalDataPoint, YearlyTrendData, ProbabilityDetail } from '@/types/weather'
 
 interface WeatherRequest {
   latitude: number
   longitude: number
   date: string
-}
-
-interface HistoricalDataPoint {
-  year: number
-  temperature_max: number
-  temperature_min: number
-  precipitation: number
-  windspeed_max: number
-  relative_humidity: number
 }
 
 export async function POST(request: NextRequest) {
@@ -36,7 +29,7 @@ export async function POST(request: NextRequest) {
     const startYear = currentYear - 20
     const historicalData: HistoricalDataPoint[] = []
 
-    // Fetch data in chunks (Open-Meteo has limits on date ranges)
+    // Fetch data in chunks
     for (let year = startYear; year < currentYear; year++) {
       try {
         const dateStr = `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`
@@ -57,14 +50,27 @@ export async function POST(request: NextRequest) {
         const data = await response.json()
         
         if (data.daily && data.daily.time && data.daily.time.length > 0) {
-          historicalData.push({
+          const dataPoint: HistoricalDataPoint = {
             year,
             temperature_max: data.daily.temperature_2m_max[0],
             temperature_min: data.daily.temperature_2m_min[0],
-            precipitation: data.daily.precipitation_sum[0],
+            precipitation: data.daily.precipitation_sum[0] || 0,
             windspeed_max: data.daily.windspeed_10m_max[0],
             relative_humidity: data.daily.relative_humidity_2m_mean[0],
-          })
+          }
+          
+          // Mark which thresholds are met
+          dataPoint.meetsHot = dataPoint.temperature_max > THRESHOLDS.VERY_HOT
+          dataPoint.meetsCold = dataPoint.temperature_min < THRESHOLDS.VERY_COLD
+          dataPoint.meetsWindy = dataPoint.windspeed_max > THRESHOLDS.VERY_WINDY
+          dataPoint.meetsWet = dataPoint.precipitation > THRESHOLDS.VERY_WET
+          dataPoint.meetsUncomfortable = 
+            (dataPoint.temperature_max > THRESHOLDS.UNCOMFORTABLE_TEMP &&
+              dataPoint.relative_humidity > THRESHOLDS.UNCOMFORTABLE_HUMIDITY) ||
+            (dataPoint.windspeed_max > THRESHOLDS.VERY_WINDY &&
+              dataPoint.precipitation > THRESHOLDS.VERY_WET)
+          
+          historicalData.push(dataPoint)
         }
       } catch (error) {
         console.error(`Error fetching data for year ${year}:`, error)
@@ -78,15 +84,26 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Calculate probabilities
-    const probabilities = calculateProbabilities(historicalData)
+    // Calculate probabilities with detailed information
+    const probabilityDetails = calculateProbabilityDetails(historicalData)
     
     // Calculate trend analysis
     const trendAnalysis = calculateTrends(historicalData)
+    
+    // Calculate yearly trends for line chart
+    const yearlyTrends = calculateYearlyTrends(historicalData)
 
     return NextResponse.json({
-      probability: probabilities,
+      probability: {
+        veryHot: probabilityDetails.veryHot.percentage,
+        veryCold: probabilityDetails.veryCold.percentage,
+        veryWindy: probabilityDetails.veryWindy.percentage,
+        veryWet: probabilityDetails.veryWet.percentage,
+        veryUncomfortable: probabilityDetails.veryUncomfortable.percentage,
+      },
+      probabilityDetails,
       trendAnalysis,
+      yearlyTrends,
       historicalData,
       dataPoints: historicalData.length,
     })
@@ -99,54 +116,75 @@ export async function POST(request: NextRequest) {
   }
 }
 
-function calculateProbabilities(data: HistoricalDataPoint[]) {
+function calculateProbabilityDetails(data: HistoricalDataPoint[]) {
   const total = data.length
 
-  // Define thresholds for extreme conditions
-  const VERY_HOT_THRESHOLD = 95 // °F
-  const VERY_COLD_THRESHOLD = 32 // °F
-  const VERY_WINDY_THRESHOLD = 25 // mph
-  const VERY_WET_THRESHOLD = 0.5 // inches
-  const UNCOMFORTABLE_HEAT_INDEX_TEMP = 85 // °F
-  const UNCOMFORTABLE_HUMIDITY = 70 // %
-
-  let veryHotCount = 0
-  let veryColdCount = 0
-  let veryWindyCount = 0
-  let veryWetCount = 0
-  let veryUncomfortableCount = 0
-
-  data.forEach((point) => {
-    if (point.temperature_max >= VERY_HOT_THRESHOLD) {
-      veryHotCount++
-    }
-    if (point.temperature_min <= VERY_COLD_THRESHOLD) {
-      veryColdCount++
-    }
-    if (point.windspeed_max >= VERY_WINDY_THRESHOLD) {
-      veryWindyCount++
-    }
-    if (point.precipitation >= VERY_WET_THRESHOLD) {
-      veryWetCount++
-    }
-    // Uncomfortable: high heat + high humidity or very windy + rain
-    if (
-      (point.temperature_max >= UNCOMFORTABLE_HEAT_INDEX_TEMP &&
-        point.relative_humidity >= UNCOMFORTABLE_HUMIDITY) ||
-      (point.windspeed_max >= VERY_WINDY_THRESHOLD &&
-        point.precipitation >= VERY_WET_THRESHOLD)
-    ) {
-      veryUncomfortableCount++
-    }
-  })
+  const veryHotCount = data.filter((d) => d.meetsHot).length
+  const veryColdCount = data.filter((d) => d.meetsCold).length
+  const veryWindyCount = data.filter((d) => d.meetsWindy).length
+  const veryWetCount = data.filter((d) => d.meetsWet).length
+  const veryUncomfortableCount = data.filter((d) => d.meetsUncomfortable).length
 
   return {
-    veryHot: (veryHotCount / total) * 100,
-    veryCold: (veryColdCount / total) * 100,
-    veryWindy: (veryWindyCount / total) * 100,
-    veryWet: (veryWetCount / total) * 100,
-    veryUncomfortable: (veryUncomfortableCount / total) * 100,
+    veryHot: {
+      percentage: (veryHotCount / total) * 100,
+      count: veryHotCount,
+      total,
+      threshold: `> ${THRESHOLDS.VERY_HOT}°F max temp`,
+    },
+    veryCold: {
+      percentage: (veryColdCount / total) * 100,
+      count: veryColdCount,
+      total,
+      threshold: `< ${THRESHOLDS.VERY_COLD}°F min temp`,
+    },
+    veryWindy: {
+      percentage: (veryWindyCount / total) * 100,
+      count: veryWindyCount,
+      total,
+      threshold: `> ${THRESHOLDS.VERY_WINDY} mph wind`,
+    },
+    veryWet: {
+      percentage: (veryWetCount / total) * 100,
+      count: veryWetCount,
+      total,
+      threshold: `> ${THRESHOLDS.VERY_WET}" precipitation`,
+    },
+    veryUncomfortable: {
+      percentage: (veryUncomfortableCount / total) * 100,
+      count: veryUncomfortableCount,
+      total,
+      threshold: `High heat+humidity OR wind+rain`,
+    },
   }
+}
+
+function calculateYearlyTrends(data: HistoricalDataPoint[]): YearlyTrendData[] {
+  // Group data by year and calculate probabilities for each year
+  const yearMap = new Map<number, HistoricalDataPoint[]>()
+  
+  data.forEach((point) => {
+    if (!yearMap.has(point.year)) {
+      yearMap.set(point.year, [])
+    }
+    yearMap.get(point.year)!.push(point)
+  })
+
+  const yearlyTrends: YearlyTrendData[] = []
+  
+  yearMap.forEach((yearData, year) => {
+    const total = yearData.length
+    yearlyTrends.push({
+      year,
+      veryHot: (yearData.filter((d) => d.meetsHot).length / total) * 100,
+      veryCold: (yearData.filter((d) => d.meetsCold).length / total) * 100,
+      veryWindy: (yearData.filter((d) => d.meetsWindy).length / total) * 100,
+      veryWet: (yearData.filter((d) => d.meetsWet).length / total) * 100,
+      veryUncomfortable: (yearData.filter((d) => d.meetsUncomfortable).length / total) * 100,
+    })
+  })
+
+  return yearlyTrends.sort((a, b) => a.year - b.year)
 }
 
 function calculateTrends(data: HistoricalDataPoint[]) {
@@ -155,37 +193,37 @@ function calculateTrends(data: HistoricalDataPoint[]) {
   const firstHalf = data.slice(0, midpoint)
   const secondHalf = data.slice(midpoint)
 
-  const firstHalfProbs = calculateProbabilities(firstHalf)
-  const secondHalfProbs = calculateProbabilities(secondHalf)
+  const firstHalfDetails = calculateProbabilityDetails(firstHalf)
+  const secondHalfDetails = calculateProbabilityDetails(secondHalf)
 
   const trends = [
     {
       category: 'Very Hot',
-      trend: getTrend(firstHalfProbs.veryHot, secondHalfProbs.veryHot),
-      changePercent: secondHalfProbs.veryHot - firstHalfProbs.veryHot,
+      trend: getTrend(firstHalfDetails.veryHot.percentage, secondHalfDetails.veryHot.percentage),
+      changePercent: secondHalfDetails.veryHot.percentage - firstHalfDetails.veryHot.percentage,
     },
     {
       category: 'Very Cold',
-      trend: getTrend(firstHalfProbs.veryCold, secondHalfProbs.veryCold),
-      changePercent: secondHalfProbs.veryCold - firstHalfProbs.veryCold,
+      trend: getTrend(firstHalfDetails.veryCold.percentage, secondHalfDetails.veryCold.percentage),
+      changePercent: secondHalfDetails.veryCold.percentage - firstHalfDetails.veryCold.percentage,
     },
     {
       category: 'Very Windy',
-      trend: getTrend(firstHalfProbs.veryWindy, secondHalfProbs.veryWindy),
-      changePercent: secondHalfProbs.veryWindy - firstHalfProbs.veryWindy,
+      trend: getTrend(firstHalfDetails.veryWindy.percentage, secondHalfDetails.veryWindy.percentage),
+      changePercent: secondHalfDetails.veryWindy.percentage - firstHalfDetails.veryWindy.percentage,
     },
     {
       category: 'Very Wet',
-      trend: getTrend(firstHalfProbs.veryWet, secondHalfProbs.veryWet),
-      changePercent: secondHalfProbs.veryWet - firstHalfProbs.veryWet,
+      trend: getTrend(firstHalfDetails.veryWet.percentage, secondHalfDetails.veryWet.percentage),
+      changePercent: secondHalfDetails.veryWet.percentage - firstHalfDetails.veryWet.percentage,
     },
     {
       category: 'Very Uncomfortable',
       trend: getTrend(
-        firstHalfProbs.veryUncomfortable,
-        secondHalfProbs.veryUncomfortable
+        firstHalfDetails.veryUncomfortable.percentage,
+        secondHalfDetails.veryUncomfortable.percentage
       ),
-      changePercent: secondHalfProbs.veryUncomfortable - firstHalfProbs.veryUncomfortable,
+      changePercent: secondHalfDetails.veryUncomfortable.percentage - firstHalfDetails.veryUncomfortable.percentage,
     },
   ]
 

@@ -13,50 +13,38 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts'
-import { Download, TrendingUp, TrendingDown, Minus, FileJson, FileSpreadsheet } from 'lucide-react'
-import type { WeatherData, Location } from '@/app/page'
+import { Download, TrendingUp, TrendingDown, Minus, FileJson, FileSpreadsheet, Info, HelpCircle } from 'lucide-react'
+import type { Location } from '@/app/page'
+import type { WeatherAnalysisResponse } from '@/types/weather'
+import { WEATHER_THRESHOLDS } from '@/config/weatherThresholds'
+import DefinitionsModal from './DefinitionsModal'
 
 interface WeatherAnalysisProps {
-  weatherData: WeatherData
+  weatherData: WeatherAnalysisResponse
   location: Location
   date: Date
 }
 
 export default function WeatherAnalysis({ weatherData, location, date }: WeatherAnalysisProps) {
   const [showTrends, setShowTrends] = useState(false)
+  const [showTrendChart, setShowTrendChart] = useState(false)
+  const [showDefinitions, setShowDefinitions] = useState(false)
 
-  const probabilityData = [
-    {
-      name: 'Very Hot',
-      probability: weatherData.probability.veryHot,
-      color: '#ef4444',
-      icon: '🔥',
-    },
-    {
-      name: 'Very Cold',
-      probability: weatherData.probability.veryCold,
-      color: '#3b82f6',
-      icon: '❄️',
-    },
-    {
-      name: 'Very Windy',
-      probability: weatherData.probability.veryWindy,
-      color: '#8b5cf6',
-      icon: '💨',
-    },
-    {
-      name: 'Very Wet',
-      probability: weatherData.probability.veryWet,
-      color: '#06b6d4',
-      icon: '🌧️',
-    },
-    {
-      name: 'Very Uncomfortable',
-      probability: weatherData.probability.veryUncomfortable,
-      color: '#f97316',
-      icon: '😰',
-    },
-  ]
+  const probabilityData = WEATHER_THRESHOLDS.map((threshold) => {
+    const key = threshold.id as keyof typeof weatherData.probability
+    const details = weatherData.probabilityDetails[key]
+    
+    return {
+      name: threshold.label,
+      probability: weatherData.probability[key],
+      color: threshold.color,
+      icon: threshold.icon,
+      count: details.count,
+      total: details.total,
+      threshold: details.threshold,
+      description: threshold.description,
+    }
+  })
 
   const getTrendIcon = (trend: 'increasing' | 'decreasing' | 'stable') => {
     if (trend === 'increasing') return <TrendingUp className="w-4 h-4 text-red-500" />
@@ -90,8 +78,14 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
 
   const downloadCSV = () => {
     const csvRows = [
-      ['Category', 'Probability (%)'],
-      ...probabilityData.map((d) => [d.name, d.probability.toFixed(1)]),
+      ['Category', 'Probability (%)', 'Count', 'Total Years', 'Threshold'],
+      ...probabilityData.map((d) => [
+        d.name,
+        d.probability.toFixed(1),
+        d.count,
+        d.total,
+        d.threshold,
+      ]),
     ]
     const csvString = csvRows.map((row) => row.join(',')).join('\n')
     const dataBlob = new Blob([csvString], { type: 'text/csv' })
@@ -105,14 +99,52 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
 
   const highestProb = getHighestProbability()
 
+  // Custom tooltip for bar chart
+  const CustomBarTooltip = ({ active, payload }: any) => {
+    if (active && payload && payload.length) {
+      const data = payload[0].payload
+      return (
+        <div className="bg-white border border-gray-200 rounded-lg shadow-lg p-3">
+          <p className="font-semibold text-gray-900 mb-1">
+            {data.icon} {data.name}
+          </p>
+          <p className="text-sm text-gray-700 font-bold">
+            {data.probability.toFixed(1)}%
+          </p>
+          <p className="text-xs text-gray-600">
+            {data.count} out of {data.total} years
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            {data.threshold}
+          </p>
+        </div>
+      )
+    }
+    return null
+  }
+
   return (
     <div className="space-y-6">
+      {/* Definitions Modal */}
+      <DefinitionsModal isOpen={showDefinitions} onClose={() => setShowDefinitions(false)} />
+
       {/* Summary Card */}
       <div className="bg-gradient-to-br from-primary-600 to-primary-800 rounded-xl shadow-lg p-6 text-white">
-        <h2 className="text-2xl font-bold mb-2">Analysis Summary</h2>
-        <p className="text-primary-100 mb-4">
-          {location.name || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}
-        </p>
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">Analysis Summary</h2>
+            <p className="text-primary-100">
+              {location.name || `${location.lat.toFixed(4)}, ${location.lng.toFixed(4)}`}
+            </p>
+          </div>
+          <button
+            onClick={() => setShowDefinitions(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-white/20 hover:bg-white/30 rounded-lg transition-colors backdrop-blur-sm border border-white/30"
+          >
+            <Info className="w-4 h-4" />
+            <span className="text-sm font-medium">Definitions</span>
+          </button>
+        </div>
         
         {highestProb && highestProb.probability > 20 && (
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
@@ -122,6 +154,9 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
               of <span className="font-semibold">{highestProb.name.toLowerCase()}</span> conditions on{' '}
               {date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}.
             </p>
+            <p className="text-sm text-primary-100 mt-2">
+              Based on {highestProb.count} occurrences in {highestProb.total} years of historical data
+            </p>
           </div>
         )}
       </div>
@@ -129,7 +164,16 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
       {/* Probability Bars */}
       <div className="bg-white rounded-xl shadow-lg p-6">
         <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-gray-900">Weather Probabilities</h3>
+          <div className="flex items-center space-x-2">
+            <h3 className="text-xl font-bold text-gray-900">Weather Probabilities</h3>
+            <button
+              onClick={() => setShowDefinitions(true)}
+              className="p-1 hover:bg-gray-100 rounded-full transition-colors"
+              title="View definitions"
+            >
+              <HelpCircle className="w-5 h-5 text-gray-400" />
+            </button>
+          </div>
           <div className="flex space-x-2">
             <button
               onClick={downloadCSV}
@@ -150,24 +194,36 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
 
         <div className="space-y-4">
           {probabilityData.map((item) => (
-            <div key={item.name}>
+            <div key={item.name} className="group">
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center space-x-2">
                   <span className="text-xl">{item.icon}</span>
-                  <span className="font-medium text-gray-700">{item.name}</span>
+                  <div>
+                    <span className="font-medium text-gray-700">{item.name}</span>
+                    <div className="flex items-center space-x-2">
+                      <span className="text-xs text-gray-500">{item.threshold}</span>
+                    </div>
+                  </div>
                 </div>
-                <span className="font-bold text-lg" style={{ color: item.color }}>
-                  {item.probability.toFixed(1)}%
-                </span>
+                <div className="text-right">
+                  <span className="font-bold text-lg" style={{ color: item.color }}>
+                    {item.probability.toFixed(1)}%
+                  </span>
+                  <p className="text-xs text-gray-500">
+                    {item.count} of {item.total} years
+                  </p>
+                </div>
               </div>
-              <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div className="relative w-full bg-gray-200 rounded-full h-4 overflow-hidden group-hover:h-5 transition-all">
                 <div
-                  className="h-full rounded-full transition-all duration-500 ease-out"
+                  className="h-full rounded-full transition-all duration-500 ease-out relative"
                   style={{
                     width: `${item.probability}%`,
                     backgroundColor: item.color,
                   }}
-                />
+                >
+                  <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                </div>
               </div>
             </div>
           ))}
@@ -182,11 +238,83 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis dataKey="name" />
             <YAxis label={{ value: 'Probability (%)', angle: -90, position: 'insideLeft' }} />
-            <Tooltip />
+            <Tooltip content={<CustomBarTooltip />} />
             <Bar dataKey="probability" fill="#0ea5e9" radius={[8, 8, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>
+
+      {/* Trend Over Time Chart */}
+      {weatherData.yearlyTrends && weatherData.yearlyTrends.length > 0 && (
+        <div className="bg-white rounded-xl shadow-lg p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-xl font-bold text-gray-900">Trend Over Time (2005-2025)</h3>
+              <p className="text-sm text-gray-600 mt-1">
+                Historical probability changes show climate patterns
+              </p>
+            </div>
+            <button
+              onClick={() => setShowTrendChart(!showTrendChart)}
+              className="px-4 py-2 bg-primary-100 hover:bg-primary-200 text-primary-700 rounded-lg transition-colors text-sm font-medium"
+            >
+              {showTrendChart ? 'Hide' : 'Show'} Chart
+            </button>
+          </div>
+
+          {showTrendChart && (
+            <ResponsiveContainer width="100%" height={400}>
+              <LineChart data={weatherData.yearlyTrends}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="year" />
+                <YAxis label={{ value: 'Probability (%)', angle: -90, position: 'insideLeft' }} />
+                <Tooltip />
+                <Legend />
+                <Line 
+                  type="monotone" 
+                  dataKey="veryHot" 
+                  stroke="#ef4444" 
+                  name="Very Hot" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="veryCold" 
+                  stroke="#3b82f6" 
+                  name="Very Cold" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="veryWindy" 
+                  stroke="#8b5cf6" 
+                  name="Very Windy" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="veryWet" 
+                  stroke="#06b6d4" 
+                  name="Very Wet" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="veryUncomfortable" 
+                  stroke="#f97316" 
+                  name="Very Uncomfortable" 
+                  strokeWidth={2}
+                  dot={{ r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          )}
+        </div>
+      )}
 
       {/* Trend Analysis */}
       {weatherData.trendAnalysis && weatherData.trendAnalysis.length > 0 && (
@@ -195,7 +323,7 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
             <div>
               <h3 className="text-xl font-bold text-gray-900">Climate Trend Analysis</h3>
               <p className="text-sm text-gray-600 mt-1">
-                Changes in weather patterns over the past 20 years
+                Comparing first 10 years vs. last 10 years
               </p>
             </div>
             <button
@@ -241,15 +369,26 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
 
       {/* Data Source Info */}
       <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-sm text-gray-600">
-        <p>
-          <strong>Data Source:</strong> Open-Meteo Historical Weather Archive API
-        </p>
-        <p className="mt-1">
-          <strong>Analysis Period:</strong> 20 years of historical data (2004-2024)
-        </p>
-        <p className="mt-1">
-          <strong>Methodology:</strong> Probabilities calculated based on the frequency of extreme
-          weather events on this date over the historical period.
+        <p className="font-semibold text-gray-900 mb-2">📊 Data Sources & Methodology</p>
+        <ul className="space-y-1">
+          <li>
+            <strong>Historical Data:</strong> Open-Meteo Archive API (ERA5 reanalysis from ECMWF)
+          </li>
+          <li>
+            <strong>Analysis Period:</strong> {weatherData.dataPoints} years of historical data (2005-2024)
+          </li>
+          <li>
+            <strong>Thresholds:</strong> Based on NOAA/NASA standards (click "Definitions" for details)
+          </li>
+          <li>
+            <strong>Methodology:</strong> Probabilities calculated as frequency of threshold exceedances
+          </li>
+          <li>
+            <strong>Trend Analysis:</strong> Compares first 10 years vs. last 10 years to detect climate shifts
+          </li>
+        </ul>
+        <p className="mt-2 text-xs text-gray-500">
+          Disclaimer: Historical probabilities are for informational purposes. Actual weather conditions may vary.
         </p>
       </div>
     </div>
