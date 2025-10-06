@@ -93,7 +93,7 @@ export default function AppPage() {
             <ol className="list-decimal list-inside space-y-1">
               <li>Click on the map or search for a location</li>
               <li>Select a date to analyze</li>
-              <li>Click "Analyze Weather" to see historical probabilities</li>
+              <li>Click &quot;Analyze Weather&quot; to see historical probabilities</li>
             </ol>
           </div>
         </div>

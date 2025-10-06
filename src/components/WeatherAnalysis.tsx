@@ -162,7 +162,7 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
           <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4 border border-white/20">
             <p className="text-lg">
               <span className="text-2xl mr-2">{highestProb.icon}</span>
-              There's a <span className="font-bold text-2xl">{highestProb.probability.toFixed(0)}%</span> chance
+              There&apos;s a <span className="font-bold text-2xl">{highestProb.probability.toFixed(0)}%</span> chance
               of <span className="font-semibold">{highestProb.name.toLowerCase()}</span> conditions on{' '}
               {date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}.
             </p>
@@ -417,7 +417,7 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
             <strong>Analysis Period:</strong> {weatherData.dataPoints} years of historical data (2005-2024)
           </li>
           <li>
-            <strong>Thresholds:</strong> Based on NOAA/NASA standards (click "Definitions" for details)
+            <strong>Thresholds:</strong> Based on NOAA/NASA standards (click &quot;Definitions&quot; for details)
           </li>
           <li>
             <strong>Methodology:</strong> Probabilities calculated as frequency of threshold exceedances

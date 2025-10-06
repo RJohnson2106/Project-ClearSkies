@@ -227,7 +227,7 @@ export default function TypicalDaySummary({
           <div className="flex items-center space-x-2">
             <span className="text-gray-700 font-medium">Avg Precip:</span>
             <span className="text-lg font-bold text-blue-700">
-              {averages.precip_in}"
+              {averages.precip_in}&quot;
             </span>
           </div>
           <div className="flex items-center space-x-2">

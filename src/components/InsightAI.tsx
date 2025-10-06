@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Sparkles, AlertCircle, Cpu, Loader2, ChevronDown, ChevronUp, Send, MessageSquare, Settings, X } from 'lucide-react'
 
 interface InsightAIProps {
@@ -65,6 +65,27 @@ export default function InsightAI({
   const chatEndRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
 
+  const enrichLocationData = useCallback(async () => {
+    try {
+      const response = await fetch(
+        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`
+      )
+      const data = await response.json()
+      
+      if (data.address) {
+        const parts = [
+          data.address.city || data.address.town || data.address.village,
+          data.address.state,
+          data.address.country
+        ].filter(Boolean)
+        setEnrichedLocation(parts.join(', '))
+      }
+    } catch (error) {
+      console.error('Error enriching location:', error)
+      setEnrichedLocation(`${lat.toFixed(2)}, ${lon.toFixed(2)}`)
+    }
+  }, [lat, lon])
+
   // Check WebGPU support
   useEffect(() => {
     if (typeof window !== 'undefined' && 'gpu' in navigator) {
@@ -79,7 +100,7 @@ export default function InsightAI({
     if (!locationName && isEnabled) {
       enrichLocationData()
     }
-  }, [locationName, isEnabled, lat, lon])
+  }, [locationName, isEnabled, lat, lon, enrichLocationData])
 
   // Auto-scroll chat to bottom
   useEffect(() => {
@@ -106,27 +127,6 @@ export default function InsightAI({
       }
     }
   }, [isEnabled, lat, lon, date])
-
-  const enrichLocationData = async () => {
-    try {
-      const response = await fetch(
-        `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=10`
-      )
-      const data = await response.json()
-      
-      if (data.address) {
-        const parts = [
-          data.address.city || data.address.town || data.address.village,
-          data.address.state,
-          data.address.country
-        ].filter(Boolean)
-        setEnrichedLocation(parts.join(', '))
-      }
-    } catch (error) {
-      console.error('Error enriching location:', error)
-      setEnrichedLocation(`${lat.toFixed(2)}, ${lon.toFixed(2)}`)
-    }
-  }
 
   const getSystemMessage = (): string => {
     const location = enrichedLocation || locationName || `${lat.toFixed(2)}, ${lon.toFixed(2)}`
