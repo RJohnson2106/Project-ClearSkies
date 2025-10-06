@@ -19,6 +19,7 @@ import type { WeatherAnalysisResponse } from '@/types/weather'
 import { WEATHER_THRESHOLDS } from '@/config/weatherThresholds'
 import DefinitionsModal from './DefinitionsModal'
 import InsightAI from './InsightAI'
+import TypicalDaySummary from './TypicalDaySummary'
 
 interface WeatherAnalysisProps {
   weatherData: WeatherAnalysisResponse
@@ -184,6 +185,16 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
         locationName={location.name}
         date={date.toISOString()}
         sampleYears={weatherData.dataPoints}
+      />
+
+      {/* Typical Day Summary */}
+      <TypicalDaySummary
+        lat={location.lat}
+        lon={location.lng}
+        date={date.toISOString()}
+        locationName={location.name}
+        tz="America/New_York"
+        fallbackHistoricalData={weatherData.historicalData}
       />
 
       {/* Probability Bars */}
