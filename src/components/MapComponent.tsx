@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react'
 import Map, { Marker, NavigationControl, GeolocateControl } from 'react-map-gl/maplibre'
 import { MapPin, Search } from 'lucide-react'
-import type { Location } from '@/app/page'
+import type { Location } from '@/types/weather'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
 interface MapComponentProps {

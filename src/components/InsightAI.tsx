@@ -8,12 +8,14 @@ interface InsightAIProps {
     veryHot: number
     veryWet: number
     veryWindy: number
+    veryCold: number
     veryUncomfortable: number
   }
   trend: {
     veryHot: number
     veryWet: number
     veryWindy: number
+    veryCold: number
     veryUncomfortable: number
   }
   lat: number
@@ -131,31 +133,54 @@ export default function InsightAI({
     const dateObj = new Date(date)
     const dateStr = dateObj.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
     
-    return `You are a concise, helpful weather insights assistant. Use the following historical weather data to inform your answers.
+    return `You are a weather insights assistant analyzing HISTORICAL weather patterns. Use ONLY the data provided below.
+
+IMPORTANT: These are PROBABILITIES based on historical weather data, NOT predictions for the specific date.
 
 Location: ${location} (${lat.toFixed(2)}, ${lon.toFixed(2)})
 Date: ${dateStr}
 Analysis Period: ${sampleYears} years of historical data
 
-Current Probabilities (based on historical frequency):
-• Very Hot (≥90°F max temp): ${Math.round(odds.veryHot)}%
-• Very Wet (≥0.5 inches rain): ${Math.round(odds.veryWet)}%
-• Very Windy (>25 mph gusts): ${Math.round(odds.veryWindy)}%
-• Very Uncomfortable (high heat+humidity OR wind+rain): ${Math.round(odds.veryUncomfortable)}%
+HISTORICAL PROBABILITIES (what has happened on this date in the past):
+• Very Hot (≥90°F max temp): ${Math.round(odds.veryHot)}% chance historically
+• Very Wet (≥0.5 inches rain): ${Math.round(odds.veryWet)}% chance historically  
+• Very Windy (>25 mph gusts): ${Math.round(odds.veryWindy)}% chance historically
+• Very Cold (≤32°F min temp): ${Math.round(odds.veryCold)}% chance historically
+• Very Uncomfortable (high heat+humidity OR wind+rain): ${Math.round(odds.veryUncomfortable)}% chance historically
 
-Climate Trends over ${sampleYears} years:
-• Very Hot days: ${trend.veryHot > 0 ? '+' : ''}${Math.round(trend.veryHot)}% change
-• Very Wet days: ${trend.veryWet > 0 ? '+' : ''}${Math.round(trend.veryWet)}% change
-• Very Windy days: ${trend.veryWindy > 0 ? '+' : ''}${Math.round(trend.veryWindy)}% change
-• Very Uncomfortable days: ${trend.veryUncomfortable > 0 ? '+' : ''}${Math.round(trend.veryUncomfortable)}% change
+CLIMATE TRENDS (how these probabilities have changed over ${sampleYears} years):
+• Very Hot days: ${trend.veryHot > 0 ? '+' : ''}${Math.round(trend.veryHot)}% change in frequency
+• Very Wet days: ${trend.veryWet > 0 ? '+' : ''}${Math.round(trend.veryWet)}% change in frequency
+• Very Windy days: ${trend.veryWindy > 0 ? '+' : ''}${Math.round(trend.veryWindy)}% change in frequency
+• Very Cold days: ${trend.veryCold > 0 ? '+' : ''}${Math.round(trend.veryCold)}% change in frequency
+• Very Uncomfortable days: ${trend.veryUncomfortable > 0 ? '+' : ''}${Math.round(trend.veryUncomfortable)}% change in frequency
 
-Guidelines:
-- Answer questions directly and concisely
-- Cite specific probabilities when relevant
-- Provide actionable recommendations
-- Don't use hedging language like "might" or "could"
-- If asked about times of day, note that data is for the full day
-- Be helpful and conversational`
+CRITICAL RULES:
+- NEVER predict specific temperatures or weather conditions for the date
+- ONLY reference the historical probabilities and trends provided
+- ALWAYS identify which condition has the HIGHEST probability (LARGEST NUMBER) from the data above
+- HIGHEST PROBABILITY = LARGEST NUMBER. 55% is higher than 0%. 10% is higher than 5%.
+- If someone asks "will it be hot/cold/etc", explain these are historical odds, not predictions
+- Focus on what has happened historically on this date and location
+- Provide practical tips based on the historical risk levels
+- Be clear that this is historical analysis, not weather forecasting
+- When analyzing, look at the probabilities and identify the highest one as the primary risk
+- DO NOT say a condition with 0% probability is the "highest" - that makes no sense
+
+DATA SUMMARY FOR ANALYSIS (sorted by probability - HIGHEST FIRST):
+${(() => {
+  const conditions = [
+    { name: 'Very Cold', prob: odds.veryCold },
+    { name: 'Very Hot', prob: odds.veryHot },
+    { name: 'Very Wet', prob: odds.veryWet },
+    { name: 'Very Windy', prob: odds.veryWindy },
+    { name: 'Very Uncomfortable', prob: odds.veryUncomfortable },
+  ].sort((a, b) => b.prob - a.prob)
+  
+  return conditions.map(c => `- ${c.name}: ${Math.round(c.prob)}% probability`).join('\n')
+})()}
+
+CRITICAL: The FIRST item above (highest %) is the primary risk. For example, if Very Cold shows 55% and Very Hot shows 0%, then Very Cold (55%) is the highest probability, NOT Very Hot (0%).`
   }
 
   const generateTemplateSummary = (): string => {
@@ -167,27 +192,28 @@ Guidelines:
       { name: 'very hot', prob: odds.veryHot, trend: trend.veryHot },
       { name: 'very wet', prob: odds.veryWet, trend: trend.veryWet },
       { name: 'very windy', prob: odds.veryWindy, trend: trend.veryWindy },
+      { name: 'very cold', prob: odds.veryCold, trend: trend.veryCold },
       { name: 'uncomfortable', prob: odds.veryUncomfortable, trend: trend.veryUncomfortable },
     ]
     
     const sorted = conditions.sort((a, b) => b.prob - a.prob)
     const primary = sorted[0]
     
-    let summary = `Based on ${sampleYears} years of data for ${location} on ${dateStr}, `
+    let summary = `Based on ${sampleYears} years of historical data for ${location} on ${dateStr}, `
     
     if (primary.prob > 50) {
-      summary += `there's a ${Math.round(primary.prob)}% chance of ${primary.name} conditions`
+      summary += `there has been a ${Math.round(primary.prob)}% historical probability of ${primary.name} conditions`
     } else if (primary.prob > 30) {
-      summary += `${primary.name} conditions are moderately likely (${Math.round(primary.prob)}%)`
+      summary += `${primary.name} conditions have been moderately common historically (${Math.round(primary.prob)}%)`
     } else {
-      summary += `conditions are generally favorable with low risk of extreme weather`
+      summary += `conditions have generally been favorable with low historical risk of extreme weather`
     }
     
     const trendingUp = conditions.filter(c => c.trend > 5)
     if (trendingUp.length > 0) {
-      summary += `. Trends show ${trendingUp[0].name} days increasing by ${Math.round(trendingUp[0].trend)}% over the past ${sampleYears} years`
+      summary += `. Historical trends show ${trendingUp[0].name} days increasing by ${Math.round(trendingUp[0].trend)}% over the past ${sampleYears} years`
     } else {
-      summary += `. Weather patterns have remained relatively stable`
+      summary += `. Historical weather patterns have remained relatively stable`
     }
     
     summary += '. '
@@ -197,10 +223,12 @@ Guidelines:
       summary += '**Tip:** Pack waterproof gear, check drainage at outdoor venues, and have indoor backup plans ready.'
     } else if (primary.name === 'very windy') {
       summary += '**Tip:** Secure loose items, avoid high-exposure areas, and monitor local wind advisories.'
+    } else if (primary.name === 'very cold') {
+      summary += '**Tip:** Dress in layers, limit outdoor exposure time, and have warm indoor activities planned.'
     } else if (primary.name === 'uncomfortable') {
       summary += '**Tip:** Plan indoor activities during peak discomfort hours and ensure adequate ventilation or AC.'
     } else {
-      summary += '**Tip:** Standard weather precautions apply—check forecast updates closer to your date.'
+      summary += '**Tip:** Standard weather precautions apply—check current forecasts closer to your date for real-time conditions.'
     }
     
     return summary
@@ -251,7 +279,11 @@ Guidelines:
     hasGeneratedRef.current = true
     
     const systemMsg = getSystemMessage()
-    const prompt = `Provide a 2-3 sentence summary of the weather risks for this date, followed by one concrete actionable tip. Format the tip with "**Tip:**" prefix.`
+    const prompt = `Look at the DATA SUMMARY section in the system message. The FIRST item listed (highest percentage) is the primary weather risk for this date. Provide a 2-3 sentence summary focusing on that condition, then give one actionable tip. Format the tip with "**Tip:**" prefix.
+
+EXAMPLE: If the list shows "Very Cold: 55%" first, then Very Cold is the primary risk.
+
+CRITICAL: The first item in the sorted list = highest probability = primary risk. Do not contradict this.`
 
     try {
       const response = await llm.chat.completions.create({
@@ -267,7 +299,7 @@ Guidelines:
       setInsight(generatedText)
       
       // Initialize chat with system message
-      setChatMessages([{ role: 'system', content: systemMsg }])
+      setChatMessages([{ role: 'system' as const, content: systemMsg }])
       
     } catch (err) {
       console.error('Error generating insight:', err)
@@ -291,7 +323,7 @@ Guidelines:
     // Add user message to chat
     const newMessages: ChatMessage[] = [
       ...chatMessages,
-      { role: 'user', content: question },
+      { role: 'user' as const, content: question },
     ]
     setChatMessages(newMessages)
 
@@ -305,9 +337,9 @@ Guidelines:
       const answer = response.choices[0]?.message?.content || 'Sorry, I could not generate a response.'
       
       // Add assistant message
-      const updatedMessages = [
+      const updatedMessages: ChatMessage[] = [
         ...newMessages,
-        { role: 'assistant', content: answer },
+        { role: 'assistant' as const, content: answer },
       ]
       setChatMessages(updatedMessages)
       
@@ -323,9 +355,9 @@ Guidelines:
       }
     } catch (err) {
       console.error('Error generating response:', err)
-      const errorMsg = [
+      const errorMsg: ChatMessage[] = [
         ...newMessages,
-        { role: 'assistant', content: 'Sorry, I encountered an error generating a response. Please try again.' },
+        { role: 'assistant' as const, content: 'Sorry, I encountered an error generating a response. Please try again.' },
       ]
       setChatMessages(errorMsg)
     } finally {
@@ -366,16 +398,13 @@ Guidelines:
   }
 
   const handleToggle = () => {
-    if (!isEnabled && modelStatus === 'idle') {
+    if (!isEnabled) {
       setIsEnabled(true)
       if (modelStatus === 'unsupported') {
         setInsight(generateTemplateSummary())
-      } else {
+      } else if (modelStatus === 'idle') {
         initializeModel()
-      }
-    } else if (!isEnabled) {
-      setIsEnabled(true)
-      if (modelStatus === 'ready' && !insight) {
+      } else if (modelStatus === 'ready' && !insight) {
         generateInitialInsight()
       }
     } else {

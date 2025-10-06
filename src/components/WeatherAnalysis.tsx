@@ -14,7 +14,7 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 import { Download, TrendingUp, TrendingDown, Minus, FileJson, FileSpreadsheet, Info, HelpCircle } from 'lucide-react'
-import type { Location } from '@/app/page'
+import type { Location } from '@/types/weather'
 import type { WeatherAnalysisResponse } from '@/types/weather'
 import { WEATHER_THRESHOLDS } from '@/config/weatherThresholds'
 import DefinitionsModal from './DefinitionsModal'
@@ -130,8 +130,10 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
     veryHot: weatherData.trendAnalysis.find(t => t.category === 'Very Hot')?.changePercent || 0,
     veryWet: weatherData.trendAnalysis.find(t => t.category === 'Very Wet')?.changePercent || 0,
     veryWindy: weatherData.trendAnalysis.find(t => t.category === 'Very Windy')?.changePercent || 0,
+    veryCold: weatherData.trendAnalysis.find(t => t.category === 'Very Cold')?.changePercent || 0,
     veryUncomfortable: weatherData.trendAnalysis.find(t => t.category === 'Very Uncomfortable')?.changePercent || 0,
   }
+  
 
   return (
     <div className="space-y-6">
@@ -177,6 +179,7 @@ export default function WeatherAnalysis({ weatherData, location, date }: Weather
           veryHot: weatherData.probability.veryHot,
           veryWet: weatherData.probability.veryWet,
           veryWindy: weatherData.probability.veryWindy,
+          veryCold: weatherData.probability.veryCold,
           veryUncomfortable: weatherData.probability.veryUncomfortable,
         }}
         trend={trendData}
